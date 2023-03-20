@@ -1,50 +1,3 @@
-/*
-// when i click on my button
-document.getElementById('getLink').addEventListener('click', function() {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        chrome.scripting.executeScript({
-            target: { tabId: tabs[0].id },
-            files: ['js/all-link.js']
-        });
-    });
-
-    chrome.storage.sync.get(['list_href'], function(result) {
-        if (result.list_href) {
-            document.querySelector('#doCloneBlock').style.display = 'block';
-            document.querySelector('#doCloneScriptBlock').style.display = 'block';
-        }
-    });
-});
-
-document.getElementById('doClone').addEventListener('click', function() {
-    chrome.storage.sync.get(['list_href'], function(result) {
-        result.list_href.forEach((url) => {
-            openTab(url);
-        });
-    });
-    chrome.storage.sync.set({'list_href': []});
-});
-
-document.getElementById('doCloneScript').addEventListener('click', function() {
-    url = 'https://allu-official.com/js/sys/allu_random.js';
-    chrome.tabs.create({url: url}, function(tab) {
-        chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['js/clone-script.js']
-        });
-    });
-});
-
-function openTab(url) {
-    chrome.tabs.create({url: url}, function(tab) {
-        // chrome.scripting.executeScript({
-        //     target: { tabId: tab.id },
-        //     files: ['js/clone-blog-detail.js']
-        // });
-    });
-}
-*/
-
 class ContentInfo extends HTMLElement {
   constructor() {
     super();
@@ -69,4 +22,57 @@ class ContentInfo extends HTMLElement {
   }
 }
 
+class ContentControl extends HTMLElement {
+  constructor() {
+    super();
+    this.init();
+    this.registerAction();
+  }
+
+  init() {
+    chrome.storage.sync.set({'url_list': []})
+    this.btnAddPage = this.querySelector('#btn_follow_page')
+    this.btnAddArticle = this.querySelector('#btn_follow_article')
+    this.btnPrimary = this.querySelector('#btn_primary')
+  }
+
+  registerAction () {
+    this.btnAddPage.onclick = this.#onAdd.bind(this, this.btnAddPage.dataset.type)
+    this.btnAddArticle.onclick = this.#onAdd.bind(this, this.btnAddArticle.dataset.type)
+    this.btnPrimary.onclick = this.#action.bind(this)
+  }
+
+  #action () {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      chrome.scripting.executeScript({
+        target: { tabId: tabs[0].id },
+        files: ['js/main.js']
+      });
+    });
+  }
+
+  #onAdd (type) {
+    const url = this.#getUrlValue()
+    if (this.#validateUrl(url)) {
+      this.#addUrl({url, type})
+    }
+  }
+
+  #getUrlValue() {
+    return this.querySelector('#url_input').value
+  }
+
+  #addUrl(url, type) {
+    const urlList = chrome.storage.sync.get(['url_list'])
+
+    urlList = [ ...urlList, { type, url } ]
+    chrome.storage.sync.set({'url_list': urlList})
+  }
+
+  #validateUrl(url) {
+    return /https:\/\/www\.facebook\.com/.test(url) && !!url;
+  }
+}
+
 customElements.define("content-info", ContentInfo);
+customElements.define("content-control", ContentControl);

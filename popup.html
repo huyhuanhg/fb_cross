@@ -157,18 +157,17 @@
         </div>
       </content-info>
       <content-control class="main-content-control">
-        <form class="main-content-control__form" action="">
+        <form class="main-content-control__form">
           <div class="form-group">
-            <input type="url" placeholder="Nhap URL">
+            <input id="url_input" type="url" placeholder="Nhập URL">
           </div>
           <div class="form-btn-group">
-            <button>Theo Dõi Trang</button>
-            <button>Theo Dõi Bài VIết</button>
+            <button type="button" id="btn_follow_page" data-type="page">Theo Dõi Trang</button>
+            <button type="button" id="btn_follow_article" data-type="article">Theo Dõi Bài VIết</button>
           </div>
         </form>
         <div class="content-control-action">
-          <button>Bắt đầu</button>
-          <button>Tắt</button>
+          <button type="button" id="btn_primary">Bắt đầu</button>
         </div>
       </content-control>
     </div>
