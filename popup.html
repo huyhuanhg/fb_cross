@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      /* -webkit-box-sizing: border-box; */
+    }
+
+    body {
+      width: 402px;
+      background: #fff;
+      overflow: hidden;
+      border: 1px solid;
+    }
+
+    .main-head {
+      display: block;
+      line-height: 56px;
+      color: #fff;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .main-head__container {
+      display: flex;
+      background: #28344f;
+      padding: 5px;
+    }
+
+    .main-head__container .logo {
+      width: 46px;
+      padding-top: 46px;
+      background-image: url(./assets/logo.png);
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .main-head__container h1 {
+      line-height: 46px;
+      margin-left: 10px;
+    }
+
+    .main-content {
+      padding: 5px;
+    }
+
+    .main-content-info.show-follow .main-content-follow {
+      display: block;
+    }
+
+    .main-content-info.show-detail .main-content-detail {
+      display: block;
+    }
+
+    .main-content-screen {
+      display: none;
+      border: 1px solid #646464;
+      background-color: #ececec;
+      padding: 5px;
+      height: 150px;
+      border-radius: 3px;
+    }
+
+    .main-content-screen__control {
+      text-align: end;
+      padding: 3px 3px 3px 0;
+    }
+
+    .main-content-screen__control a {
+      color: #000;
+      font-size: 12px;
+      text-decoration: none;
+    }
+
+    .form-group, .form-btn-group {
+      margin-bottom: 10px;
+      position: relative;
+    }
+
+    .form-btn-group {
+      display: flex;
+    }
+
+    .form-group input {
+      width: calc(100% - 10px);
+      margin: 0 5px;
+      padding: 5px 10px;
+    }
+
+    .form-btn-group button {
+      width: 50%;
+      margin: 0 5px;
+      outline: none;
+      cursor: pointer;
+      padding: 3px 5px;
+    }
+
+    .content-control-action {
+      margin: 20px 0 10px;
+      display: flex;
+      justify-content: end;
+      position: relative;
+    }
+
+    .content-control-action::before {
+      content: '';
+      display: block;
+      position: absolute;
+      width: 100%;
+      height: 1px;
+      background-color: #000;
+      top: -10px;
+    }
+
+    .content-control-action button {
+      padding: 3px 5px;
+      margin-left: 5px;
+      outline: none;
+      cursor: pointer;
+    }
+  </style>
+  <script src="./popup.js" defer></script>
+</head>
+
+<body>
+  <div class="main-head">
+    <div class="main-head__container">
+      <div class="logo"></div>
+      <h1>Facebook Cross Like</h1>
+    </div>
+  </div>
+  <div class="main-content">
+    <div class="main-content__container">
+      <content-info
+        class="main-content-info show-follow"
+        id="main_content_info"
+        data-switch-class="show-detail"
+      >
+        <div id="main_content_follow" class="main-content-screen main-content-follow">
+          follow
+        </div>
+        <div id="main_content_detail" class="main-content-screen main-content-detail">
+          detail
+        </div>
+        <div class="main-content-screen__control">
+          <a
+            href="javascript:void(0)"
+            data-switch-text="Xem tổng quan >>"
+            data-current-class="show-follow"
+            id="btn_switch"
+          >Xem chi tiết >></a>
+        </div>
+      </content-info>
+      <content-control class="main-content-control">
+        <form class="main-content-control__form" action="">
+          <div class="form-group">
+            <input type="url" placeholder="Nhap URL">
+          </div>
+          <div class="form-btn-group">
+            <button>Theo Dõi Trang</button>
+            <button>Theo Dõi Bài VIết</button>
+          </div>
+        </form>
+        <div class="content-control-action">
+          <button>Bắt đầu</button>
+          <button>Tắt</button>
+        </div>
+      </content-control>
+    </div>
+  </div>
+</body>
+
+</html>

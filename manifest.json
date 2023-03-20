@@ -1,0 +1,42 @@
+{
+    "name": "Facebook cross like",
+    "description": "Facebook cross like",
+    "version": "1.0",
+    "manifest_version": 3,
+    "background": {
+      "service_worker": "/js/background.js"
+    },
+    "permissions": [
+      "storage",
+      "activeTab",
+      "background",
+      "scripting",
+      "tabs"
+    ],
+    "host_permissions": [
+      "http://*/*",
+      "https://*/*",
+      "<all_urls>"
+    ],
+    "icons": {
+      "16": "/assets/logo.png",
+      "32": "/assets/logo.png",
+      "48": "/assets/logo.png",
+      "128": "/assets/logo.png"
+    },
+    "action": {
+      "default_popup": "popup.html",
+      "default_icon": {
+        "16": "/assets/logo.png",
+        "32": "/assets/logo.png",
+        "48": "/assets/logo.png",
+        "128": "/assets/logo.png"
+      }
+    },
+    "content_scripts": [
+      {
+        "matches": ["https://www.facebook.com/*"],
+        "js": ["/js/clone-blog-detail.js"]
+      }
+    ]
+}
