@@ -32,11 +32,5 @@
         "48": "/assets/logo.png",
         "128": "/assets/logo.png"
       }
-    },
-    "content_scripts": [
-      {
-        "matches": ["https://www.facebook.com/*"],
-        "js": ["/js/clone-blog-detail.js"]
-      }
-    ]
+    }
 }

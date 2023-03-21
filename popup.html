@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+  <meta charset="UTF-8">
   <style>
     * {
       margin: 0;
@@ -64,6 +65,30 @@
       padding: 5px;
       height: 150px;
       border-radius: 3px;
+      overflow: auto;
+    }
+
+    /* width */
+    .main-content-screen::-webkit-scrollbar {
+      width: 5px;
+    }
+
+
+    /* Track */
+    .main-content-screen::-webkit-scrollbar-track {
+      box-shadow: inset 0 0 2px grey;
+      border-radius: 10px;
+    }
+
+    /* Handle */
+    .main-content-screen::-webkit-scrollbar-thumb {
+      background: rgb(173, 173, 173);
+      border-radius: 10px;
+    }
+
+    /* Handle on hover */
+    .main-content-screen::-webkit-scrollbar-thumb:hover {
+      background: rgb(83, 83, 83);
     }
 
     .main-content-screen__control {
@@ -77,26 +102,30 @@
       text-decoration: none;
     }
 
-    .form-group, .form-btn-group {
-      margin-bottom: 10px;
-      position: relative;
-    }
-
-    .form-btn-group {
+    .main-content-control__form {
       display: flex;
     }
 
-    .form-group input {
-      width: calc(100% - 10px);
-      margin: 0 5px;
+    .form-group {
+      width: 70%;
+    }
+
+    .form-btn-group {
+      width: 30%;
+    }
+
+    .form-group input,
+    .form-btn-group button {
+      width: 100%;
       padding: 5px 10px;
     }
 
     .form-btn-group button {
-      width: 50%;
-      margin: 0 5px;
-      outline: none;
       cursor: pointer;
+    }
+
+    .form-group,
+    .form-btn-group {
       padding: 3px 5px;
     }
 
@@ -123,6 +152,36 @@
       outline: none;
       cursor: pointer;
     }
+
+    .log-follow-wrapper {
+      display: flex;
+    }
+
+    .log-detail-wrapper {
+      margin-bottom: 5px;
+    }
+
+    .log-follow-wrapper span,
+    .log-detail-wrapper span {
+      display: block;
+      font-size: 12px;
+      line-height: 16px;
+    }
+
+    .log-follow-wrapper .log-follow-page-url {
+      width: calc(100% - 40px);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .log-follow-wrapper .log-follow-page-action {
+      width: 40px;
+      text-align: center;
+      text-decoration: underline;
+      color: blue;
+      cursor: pointer;
+    }
   </style>
   <script src="./popup.js" defer></script>
 </head>
@@ -136,24 +195,12 @@
   </div>
   <div class="main-content">
     <div class="main-content__container">
-      <content-info
-        class="main-content-info show-follow"
-        id="main_content_info"
-        data-switch-class="show-detail"
-      >
-        <div id="main_content_follow" class="main-content-screen main-content-follow">
-          follow
-        </div>
-        <div id="main_content_detail" class="main-content-screen main-content-detail">
-          detail
-        </div>
+      <content-info class="main-content-info show-follow" id="main_content_info" data-switch-class="show-detail">
+        <div id="main_content_follow" class="main-content-screen main-content-follow"></div>
+        <div id="main_content_detail" class="main-content-screen main-content-detail"></div>
         <div class="main-content-screen__control">
-          <a
-            href="javascript:void(0)"
-            data-switch-text="Xem tổng quan >>"
-            data-current-class="show-follow"
-            id="btn_switch"
-          >Xem chi tiết >></a>
+          <a href="javascript:void(0)" data-switch-text="Xem tổng quan >>" data-current-class="show-follow"
+            id="btn_switch">Xem chi tiết >></a>
         </div>
       </content-info>
       <content-control class="main-content-control">
@@ -162,12 +209,12 @@
             <input id="url_input" type="url" placeholder="Nhập URL">
           </div>
           <div class="form-btn-group">
-            <button type="button" id="btn_follow_page" data-type="page">Theo Dõi Trang</button>
-            <button type="button" id="btn_follow_article" data-type="article">Theo Dõi Bài VIết</button>
+            <button type="button" id="btn_follow_page">Theo Dõi</button>
           </div>
         </form>
         <div class="content-control-action">
           <button type="button" id="btn_primary">Bắt đầu</button>
+          <button type="button" id="btn_reset">Làm mới</button>
         </div>
       </content-control>
     </div>
