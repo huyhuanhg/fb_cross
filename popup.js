@@ -1,3 +1,208 @@
+class AbstractStorage {
+  static get KEY() {
+    throw new Error("You have to implement the constant KEY!");
+  }
+
+  static get NAMESPACE() {
+    throw new Error("You have to implement the constant NAMESPACE!");
+  }
+
+  static get REQUIRE_KEY() {
+    throw new Error("You have to implement the constant REQUIRE_KEY!");
+  }
+
+  static get REQUIRE_KEYS() {
+    throw new Error("You have to implement the constant PRIMARY_KEY!");
+  }
+
+  static get DEFAULT_VALUE() {
+    throw new Error("You have to implement the constant DEFAULT_VALUE!");
+  }
+
+  static push(value) {
+    throw new Error("You have to implement the method push!");
+  }
+
+  static gets(keys) {
+    if (typeof keys !== "object" && Array.isArray(keys)) {
+      return Promise.reject(new Error("Variable type is valid"));
+    }
+
+    return chrome.storage[this.NAMESPACE].get(keys).then(
+      (result) => Promise.resolve(result),
+      (error) => Promise.reject(error)
+    );
+  }
+
+  static async get() {
+    return chrome.storage[this.NAMESPACE].get([this.KEY]).then(
+      (result) => Promise.resolve(result[this.KEY] || this.DEFAULT_VALUE),
+      () => Promise.resolve(this.DEFAULT_VALUE)
+    );
+  }
+
+  static set(value) {
+    if (this.isInvalidRequireKeys(value)) {
+      return;
+    }
+
+    chrome.storage[this.NAMESPACE].set({ [this.KEY]: value });
+  }
+
+  static reset() {
+    chrome.storage[this.NAMESPACE].set({ [this.KEY]: this.DEFAULT_VALUE });
+  }
+
+  static isInvalidRequireKeys(value) {
+    for (const key of this.REQUIRE_KEYS) {
+      if (!value.hasOwnProperty(key)) {
+        if (this.DEFAULT_KEY_VALUE && this.DEFAULT_KEY_VALUE.hasOwnProperty(key)) {
+          value[key] = this.DEFAULT_KEY_VALUE[key]
+
+          continue;
+        }
+
+        return true;
+      }
+    }
+
+    return false;
+  }
+}
+
+class QueueLocalStorage extends AbstractStorage {
+  static get NAMESPACE() {
+    return "local";
+  }
+
+  static get KEY() {
+    return "queue";
+  }
+
+  static get PRIMARY_KEY() {
+    return "url";
+  }
+
+  static get REQUIRE_KEYS() {
+    return ["url", "status"];
+  }
+
+  static get DEFAULT_VALUE() {
+    return [];
+  }
+
+  static push(value) {
+    if (this.isInvalidRequireKeys(value)) {
+      return;
+    }
+
+    this.get().then((result) => {
+      const pushingPKValue = value[this.PRIMARY_KEY];
+      if (!pushingPKValue) {
+        return;
+      }
+
+      const cloneResult = [...result];
+
+      const pushingValueIndex = cloneResult.findIndex(
+        (cloneVal) => cloneVal[this.PRIMARY_KEY] === pushingPKValue
+      );
+
+      if (pushingValueIndex !== -1) {
+        return;
+      }
+
+      this.set([...result, value]);
+    });
+  }
+
+  static async getByPK(PKVal) {
+    return this.get().then((result) => {
+      const PKRecord = result.find(
+        (resultVal) => resultVal[this.PRIMARY_KEY] === PKVal
+      );
+      return PKRecord ? Promise.resolve(PKRecord) : Promise.resolve(null);
+    });
+  }
+
+  static delete(PKVal) {
+    this.get().then((result) => {
+      const cloneResult = [...result];
+
+      const pushingValueIndex = cloneResult.findIndex(
+        (cloneVal) => cloneVal[this.PRIMARY_KEY] === PKVal
+      );
+
+      if (pushingValueIndex === -1) {
+        return;
+      }
+
+      cloneResult.splice(pushingValueIndex, 1);
+
+      this.set(cloneResult);
+    });
+  }
+}
+
+class LogDetailLocalStorage extends AbstractStorage {
+  static get NAMESPACE() {
+    return "local";
+  }
+
+  static get KEY() {
+    return "log_detail";
+  }
+
+  static get REQUIRE_KEYS() {
+    return ["content", "level"];
+  }
+
+  static get DEFAULT_KEY_VALUE() {
+    return {
+      level: 'default'
+    };
+  }
+
+  static get DEFAULT_VALUE() {
+    return [];
+  }
+
+  static get CONTENT_KEY() {
+    return "content";
+  }
+
+  static get LOG_LEVEL_COLOR() {
+    return {
+      danger: "#dc3545",
+      info: "#0d6efd",
+      success: "#198754",
+      warning: "#ffc107",
+      default: "#6c757d",
+    };
+  }
+
+  static push(value) {
+    if (this.isInvalidRequireKeys(value)) {
+      return;
+    }
+
+    value = this.#convertFormatContent(value);
+
+    this.get().then((result) => {
+      this.set([...result, value]);
+    });
+  }
+
+  static #convertFormatContent(value) {
+    return `<span style="color: ${this.LOG_LEVEL_COLOR[value.level]}" data-time="" title="">${value[this.CONTENT_KEY].replaceAll(
+      /:(\w+)/g,
+      (_, key) => (value.hasOwnProperty(key) ? value[key] : "")
+    )}</span>`
+  }
+}
+
+class Runner {}
+
 const addQueue = (url, status = "inactive") => {
   chrome.storage.sync.get(["queue"], ({ queue }) => {
     chrome.storage.sync.set({
@@ -101,27 +306,23 @@ class Container {
     );
   }
 
-  static add(url) {
+  static add(url) {}
 
-  }
+  static delete(url) {}
 
-  static delete(url) {
-
-  }
-
-  static #execute() {
-
-  }
+  static #execute() {}
 }
 
 class ContentInfo extends HTMLElement {
-  logLevelMap = {
-    danger: "#dc3545",
-    info: "#0d6efd",
-    success: "#198754",
-    warning: "#ffc107",
-    default: "#6c757d",
-  };
+  get logLevelMap() {
+    return {
+      danger: "#dc3545",
+      info: "#0d6efd",
+      success: "#198754",
+      warning: "#ffc107",
+      default: "#6c757d",
+    };
+  }
 
   constructor() {
     super();
