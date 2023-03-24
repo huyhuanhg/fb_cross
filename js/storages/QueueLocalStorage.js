@@ -1,5 +1,5 @@
-import Storage from './AbstractStorage.js'
-import { DEFAULT_STORAGE_NAMESPACE, QUEUE_STORAGE_KEY } from './config';
+import Storage from "./AbstractStakingStorage.js";
+import { DEFAULT_STORAGE_NAMESPACE, QUEUE_STORAGE_KEY } from "./config";
 
 export default class QueueLocalStorage extends Storage {
   static get NAMESPACE() {
@@ -30,15 +30,18 @@ export default class QueueLocalStorage extends Storage {
     return {
       state: false,
       data: []
-    }
+    };
   }
 
-  static async getByPK(PKVal) {
-    return this.get().then((result) => {
-      const PKRecord = result.find(
-        (resultVal) => resultVal[this.PRIMARY_KEY] === PKVal
-      );
-      return PKRecord ? Promise.resolve(PKRecord) : Promise.resolve(null);
-    });
+  static async isStart() {
+    return await this.get().then(({ state }) => state);
+  }
+
+  static start() {
+    this.get().then(({ state, ...args }) => this.set({ state: true, ...args }));
+  }
+
+  static validate(record) {
+    return true;
   }
 }

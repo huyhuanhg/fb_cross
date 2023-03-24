@@ -40,4 +40,21 @@ export default class AbstractStorage {
   static reset() {
     chrome.storage[this.NAMESPACE].set({ [this.KEY]: this.INIT_VALUE });
   }
+
+  static change(callback) {
+    if (!callback || typeof callback !== 'function') {
+      return
+    }
+
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName !== this.NAMESPACE) {
+        return;
+      }
+
+      if (changes.hasOwnProperty(this.KEY)) {
+        const { [this.KEY]: { newValue } } = changes;
+        callback(newValue)
+      }
+    });
+  }
 }

@@ -4,18 +4,34 @@
 //   }
 // )
 
-(async () => {
-  const set = await chrome.storage.local.set({ test: 'nextValue',test2: 'nextValue' }).then((result) => {
-    console.log('set_result :>> ', result);
-  }).catch((err) => {
-    console.log('set_err :>> ', err);
-  });
+(() => {
+  chrome.storage.onChanged.addListener(
+    ((changes, areaName) => {
+      if (areaName !== "local") {
+        return;
+      }
 
+      if (changes.hasOwnProperty("queue")) {
+        const {
+          queue: { newValue },
+        } = changes;
+        console.log("queue :>> ", newValue);
+      }
+    }).bind(this)
+  );
 
-  const get = await chrome.storage.local.get(['test', 'test2', 'test3']).then(({ test, test2, test3}) => {
-    console.log('get_result :>> ', test, test2, test3);
-  }).catch((err) => {
-    console.log('get_err :>> ', err);
-  });
-  console.log('get :>> ', get);
-} )()
+  chrome.storage.onChanged.addListener(
+    ((changes, areaName) => {
+      if (areaName !== "local") {
+        return;
+      }
+
+      if (changes.hasOwnProperty("log_detail")) {
+        const {
+          log_detail: { newValue },
+        } = changes;
+        console.log("log_detail :>> ", newValue);
+      }
+    }).bind(this)
+  );
+})();

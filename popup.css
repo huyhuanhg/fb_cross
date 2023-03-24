@@ -1,0 +1,250 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  /* -webkit-box-sizing: border-box; */
+}
+
+body {
+  width: 402px;
+  background: #fff;
+  overflow: hidden;
+  border: 1px solid;
+}
+
+.main-head {
+  display: block;
+  line-height: 56px;
+  color: #fff;
+  overflow: hidden;
+  position: relative;
+}
+
+.main-head__container {
+  display: flex;
+  background: #28344f;
+  padding: 5px;
+}
+
+.main-head__container .logo {
+  width: 46px;
+  padding-top: 46px;
+  background-image: url(./assets/logo.png);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.main-head__container h1 {
+  line-height: 46px;
+  margin-left: 10px;
+}
+
+.main-content {
+  padding: 5px;
+}
+
+.main-content-info.show-follow .main-content-follow {
+  display: block;
+}
+
+.main-content-info.show-detail .main-content-detail {
+  display: block;
+}
+
+.main-content-screen {
+  display: none;
+  border: 1px solid #646464;
+  background-color: #ececec;
+  padding: 5px;
+  height: 150px;
+  border-radius: 3px;
+  overflow: auto;
+}
+
+/* width */
+.main-content-screen::-webkit-scrollbar {
+  width: 5px;
+}
+
+/* Track */
+.main-content-screen::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 2px grey;
+  border-radius: 10px;
+}
+
+/* Handle */
+.main-content-screen::-webkit-scrollbar-thumb {
+  background: rgb(173, 173, 173);
+  border-radius: 10px;
+}
+
+/* Handle on hover */
+.main-content-screen::-webkit-scrollbar-thumb:hover {
+  background: rgb(83, 83, 83);
+}
+
+.main-content-screen__control {
+  text-align: end;
+  padding: 3px 3px 3px 0;
+}
+
+.main-content-screen__control a {
+  color: #000;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.main-content-control__form {
+  display: flex;
+}
+
+.form-group {
+  width: 70%;
+}
+
+.form-btn-group {
+  width: 30%;
+}
+
+.form-group input,
+.form-btn-group button {
+  width: 100%;
+  padding: 5px 10px;
+}
+
+.form-btn-group button {
+  cursor: pointer;
+}
+
+.form-group,
+.form-btn-group {
+  padding: 3px 5px;
+}
+
+.content-control-action {
+  margin: 20px 0 10px;
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+}
+
+.content-control-input {
+  flex: 1 0 0;
+  position: relative;
+}
+
+.content-control-action__btn_groups {
+  display: flex;
+  align-items: center;
+}
+
+.content-control-input input {
+  width: 100%;
+  padding: 5px 25px 5px 10px;
+}
+
+#your_page_url_input + span {
+  display: none;
+}
+
+#your_page_url_input[disabled] + span {
+  display: block;
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: rgb(97, 97, 255);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.content-control-action::before {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  background-color: #000;
+  top: -10px;
+}
+
+.content-control-action button {
+  padding: 3px 5px;
+  margin-left: 5px;
+  outline: none;
+  cursor: pointer;
+  border: 1px solid #000;
+}
+
+.log-follow-wrapper {
+  display: flex;
+  padding-left: 15px;
+  position: relative;
+}
+
+.log-follow-wrapper[data-status]::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background-color: #646464;
+}
+
+.log-follow-wrapper[data-status="inactive"]::before {
+  background-color: #ffc107;
+}
+
+.log-follow-wrapper[data-status="active"]::before {
+  background-color: #198754;
+}
+
+.log-detail-wrapper {
+  margin-bottom: 5px;
+}
+
+.log-follow-wrapper span,
+.log-detail-wrapper span {
+  display: block;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.log-follow-wrapper .log-follow-page-url {
+  width: calc(100% - 40px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.log-follow-wrapper .log-follow-page-action {
+  width: 40px;
+  text-align: center;
+  text-decoration: underline;
+  color: blue;
+  cursor: pointer;
+}
+
+#btn_primary {
+  width: 80px;
+}
+
+#btn_reset {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+#btn_primary[data-on-click-label="Tạm dừng"] {
+  background-color: #198754;
+  color: #fff;
+}
+
+#btn_primary[data-on-click-label="Bắt đầu"] {
+  background-color: #ffc107;
+}

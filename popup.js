@@ -1,39 +1,6 @@
-
-
-
-const addQueue = (url, status = "inactive") => {
-  chrome.storage.sync.get(["queue"], ({ queue }) => {
-    chrome.storage.sync.set({
-      queue: [...(queue || []), { url, status }],
-    });
-  });
-};
-
-const getStorage = (key, callback) => {
-  chrome.storage.sync.get([key], (storage) => {
-    callback(storage[key]);
-  });
-};
-
-const addLogDetail = (message, args) => {
-  chrome.storage.sync.get(["log_detail"], ({ log_detail }) => {
-    chrome.storage.sync.set({
-      log_detail: [...(log_detail || []), { message, ...args }],
-    });
-  });
-};
-
-const deleteQueue = (urlDelete) => {
-  chrome.storage.sync.get(["queue"], ({ queue }) => {
-    const nextValue = [...(queue || [])];
-    const urlIndex = nextValue.findIndex(({ url }) => urlDelete === url);
-
-    if (urlIndex > -1) {
-      nextValue.splice(urlIndex, 1);
-      chrome.storage.sync.set({ queue: nextValue });
-    }
-  });
-};
+import LogDetailStorage from "./js/storages/LogDetailLocalStorage";
+import QueueStorage from "./js/storages/QueueLocalStorage";
+import Runner from "./js/jobs/Runner";
 
 class Container {
   static isStart(callback) {
@@ -135,6 +102,14 @@ class ContentInfo extends HTMLElement {
     this.listenAndRender();
   }
 
+  listenAndRender() {
+    this.#renderFollow(QueueStorage.getStack());
+    this.#renderDetail(LogDetailStorage.getStack());
+
+    QueueStorage.change(this.#renderFollow.bind(this));
+    LogDetailStorage.change(this.#renderDetail.bind(this));
+  }
+
   onSwitch() {
     const currentClass = this.btnSwitch.dataset.currentClass;
     const currentLabel = this.btnSwitch.innerText;
@@ -145,44 +120,6 @@ class ContentInfo extends HTMLElement {
     this.dataset.switchClass = currentClass;
     this.btnSwitch.innerText = this.btnSwitch.dataset.switchText;
     this.btnSwitch.dataset.switchText = currentLabel;
-  }
-
-  listenAndRender() {
-    chrome.storage.sync.get(
-      ["queue"],
-      (({ queue }) => {
-        this.#renderFollow(queue || []);
-      }).bind(this)
-    );
-
-    chrome.storage.sync.get(
-      ["log_detail"],
-      (({ log_detail }) => {
-        this.#renderDetail(log_detail || []);
-      }).bind(this)
-    );
-
-    chrome.storage.onChanged.addListener(
-      ((changes, areaName) => {
-        if (areaName !== "sync") {
-          return;
-        }
-
-        if (changes.hasOwnProperty("queue")) {
-          const {
-            queue: { newValue },
-          } = changes;
-          this.#renderFollow(newValue);
-        }
-
-        if (changes.hasOwnProperty("log_detail")) {
-          const {
-            log_detail: { newValue },
-          } = changes;
-          this.#renderDetail(newValue);
-        }
-      }).bind(this)
-    );
   }
 
   #renderFollow(value) {
@@ -217,33 +154,18 @@ class ContentInfo extends HTMLElement {
   #renderDetail(value) {
     this.logDetailElement.innerHTML = "";
 
-    value.forEach(({ message, ...logVariables }) => {
+    value.forEach((message) => {
       const logDetailWrapper = document.createElement("div");
       logDetailWrapper.classList.add("log-detail-wrapper");
 
-      if (logVariables.hasOwnProperty("level")) {
-        const color =
-          this.logLevelMap[logVariables.level] || this.logLevelMap.default;
-
-        logDetailWrapper.style.color = color;
-      }
-
-      logDetailWrapper.innerHTML = `<span>${message.replaceAll(
-        /:(\w+)/g,
-        (_, key) => (logVariables.hasOwnProperty(key) ? logVariables[key] : "")
-      )}</span>`;
+      logDetailWrapper.innerHTML = message;
 
       this.logDetailElement.append(logDetailWrapper);
     });
   }
 
   #deleteUrl(url) {
-    Container.delete(url);
-    deleteQueue(url);
-    addLogDetail("URL :url đã được xóa khỏi hàng đợi!", {
-      url: `<strong>${url}</strong>`,
-      level: "danger",
-    });
+    Runner.delete(url);
   }
 }
 
@@ -263,14 +185,10 @@ class ContentControl extends HTMLElement {
     this.btnPrimary = this.querySelector("#btn_primary");
     this.btnReset = this.querySelector("#btn_reset");
 
-    Container.isStart(
-      ((isStart) => {
-        if (isStart) {
-          this.btnPrimary.dataset.onClickLabel = "Bắt đầu";
-          this.btnPrimary.innerText = "Tạm dừng";
-        }
-      }).bind(this)
-    );
+    if (Runner.state()) {
+      this.btnPrimary.dataset.onClickLabel = "Bắt đầu";
+      this.btnPrimary.innerText = "Tạm dừng";
+    }
   }
 
   registerAction() {
@@ -284,37 +202,21 @@ class ContentControl extends HTMLElement {
   }
 
   #action() {
-    getStorage(
-      "queue",
-      ((queue) => {
-        if (queue?.length > 0) {
-          const nextLabel = this.btnPrimary.dataset.onClickLabel;
-          this.btnPrimary.dataset.onClickLabel = this.btnPrimary.innerText;
-          this.btnPrimary.innerText = nextLabel;
-
-          Container.isStart((isStart) => {
-            if (isStart) {
-              Container.stop();
-            } else {
-              Container.start();
-            }
-          });
-        }
-      }).bind(this)
-    );
+    if (Runner.state()) {
+      Runner.stop();
+    } else {
+      Runner.start();
+    }
   }
 
   #reset() {
-    chrome.storage.sync.set({ queue: null });
-    chrome.storage.sync.set({ log_detail: null });
-    Container.stop();
+    Runner.reset();
   }
 
   #onAdd() {
     const url = this.#getUrlValue();
     if (this.#validateUrl(url)) {
-      this.#addUrl(url);
-      this.#addDetail(url);
+      Runner.push(url);
     } else {
       this.querySelector("form.main-content-control__form").reset();
     }
@@ -354,26 +256,6 @@ class ContentControl extends HTMLElement {
 
   #getUrlValue() {
     return this.querySelector("#url_input").value;
-  }
-
-  #addUrl(url) {
-    Container.add(url);
-    addQueue(url);
-  }
-
-  #addDetail(url) {
-    addLogDetail("URL :url đã được thêm vào hàng đợi!", {
-      url: `<strong>${url}</strong>`,
-      level: "info",
-    });
-  }
-
-  #validateQueueUrl(url) {
-    if (! this.#validateUrl(url)) {
-      return false
-    }
-
-    return true;
   }
 
   #validateUrl(url) {

@@ -30,7 +30,61 @@ export default class AbstractStakingStorage extends Storage {
     );
   }
 
+  static async getStack() {
+    return this.get().then((result) => {
+      const key = this.getStackKey();
+
+      return Obj.get(result, key);
+    });
+  }
+
   static push(value) {
+    if (this.isInvalidRequireKeys(value)) {
+      return;
+    }
+
+    if (
+      this.hasOwnProperty("validate") &&
+      typeof this.validate === "function" &&
+      !this.validate(value)
+    ) {
+      return;
+    }
+
+    if (this.hasOwnProperty("format") && typeof this.format === "function") {
+      value = this.format(value);
+    }
+
+    this.get().then((result) => {
+      const key = this.getStackKey();
+
+      if (!Obj.has(result, key)) {
+        return;
+      }
+
+      if (!key && Arr.isArray(result)) {
+        return this.set([...result, value]);
+      }
+
+      const cloneResult = { ...result };
+      let stacks = Obj.get(cloneResult, key);
+
+      if (!Arr.isArray(stacks)) {
+        return;
+      }
+
+      const parentKey = key.includes(".")
+        ? key.replace(/^(.+?)\.\w+$/, "$1")
+        : "";
+      const stackKey = !parentKey ? key : key.replace(/^(.+?)\.(\w+)$/, "$2");
+      const parent = Obj.get(cloneResult, parentKey);
+      parent[stackKey] = [...stacks, value];
+
+      this.set(cloneResult);
+    });
+  }
+
+  static update(PkVal, value) {
     if (this.isInvalidRequireKeys(value)) {
       return;
     }
@@ -40,42 +94,91 @@ export default class AbstractStakingStorage extends Storage {
     }
 
     this.get().then((result) => {
-      let cloneResult = { ...result };
+      const key = this.getStackKey();
 
-      const regex = new RegExp(`^${this.KEY}((\.)(.+?))?$`)
-      const key = this.STACKING_WRAPPER.replace(regex, '$3')
-
-      if (Obj.has(cloneResult, key)) {
-        const stacks = Obj.get(cloneResult, key)
-        if (! Arr.isArray(stacks)) {
-          return
-        }
-
-        const stackKey = !key ? this.STACKING_WRAPPER : 1
-        const parent = {}
-
-        parent[stackKey] = [ ...stacks, value ]
-
-        this.set(cloneResult);
-      }
-    });
-  }
-
-  static delete(PKVal) {
-    this.get().then((result) => {
-      const cloneResult = [...result];
-
-      const pushingValueIndex = cloneResult.findIndex(
-        (cloneVal) => cloneVal[this.PRIMARY_KEY] === PKVal
-      );
-
-      if (pushingValueIndex === -1) {
+      if (!Obj.has(result, key)) {
         return;
       }
 
-      cloneResult.splice(pushingValueIndex, 1);
+      if (!key && Arr.isArray(result)) {
+        const cloneResult = [...result];
+
+        this.#updateByPK(cloneResult, PkVal, value);
+
+        return this.set(cloneResult);
+      }
+
+      const cloneResult = { ...result };
+
+      if (!Arr.isArray(Obj.get(cloneResult, key))) {
+        return;
+      }
+
+      const parentKey = key.includes(".")
+        ? key.replace(/^(.+?)\.\w+$/, "$1")
+        : "";
+      const stackKey = !parentKey ? key : key.replace(/^(.+?)\.(\w+)$/, "$2");
+      const parent = Obj.get(cloneResult, parentKey);
+
+      this.#updateByPK(parent[stackKey], PkVal, value);
 
       this.set(cloneResult);
+    });
+  }
+
+  static delete(PkVal) {
+    this.get().then((result) => {
+      const key = this.getStackKey();
+
+      if (!Obj.has(result, key)) {
+        return;
+      }
+
+      if (!key && Arr.isArray(result)) {
+        const cloneResult = [...result];
+
+        this.#removeByPK(cloneResult, PkVal);
+
+        return this.set(cloneResult);
+      }
+
+      const cloneResult = { ...result };
+
+      if (!Arr.isArray(Obj.get(cloneResult, key))) {
+        return;
+      }
+
+      const parentKey = key.includes(".")
+        ? key.replace(/^(.+?)\.\w+$/, "$1")
+        : "";
+      const stackKey = !parentKey ? key : key.replace(/^(.+?)\.(\w+)$/, "$2");
+      const parent = Obj.get(cloneResult, parentKey);
+
+      this.#removeByPK(parent[stackKey], PkVal);
+
+      this.set(cloneResult);
+    });
+  }
+
+  static async getByPK(PkVal) {
+    return this.get().then((result) => {
+      const key = this.getStackKey();
+
+      if (!Obj.has(result, key)) {
+        return Promise.resolve(null);
+      }
+
+      if (!key && Arr.isArray(result)) {
+        return this.#findByPK(result, PkVal);
+      }
+
+      const stacks = Obj.get(result, key);
+
+      if (!Arr.isArray(stacks)) {
+        return Promise.resolve(null);
+      }
+
+      return this.#findByPK(stacks, PkVal);
     });
   }
 
@@ -96,5 +199,44 @@ export default class AbstractStakingStorage extends Storage {
     }
 
     return false;
+  }
+
+  static getStackKey() {
+    return this.STACKING_WRAPPER.replace(
+      new RegExp(`^${this.KEY}((\.)(.+?))?$`),
+      "$3"
+    );
+  }
+
+  static #findByPK(stacks, PkVal, PkKey = null) {
+    const PkRecord = stacks.find(
+      (resultVal) => resultVal[PkKey || this.PRIMARY_KEY] === PkVal
+    );
+
+    return PkRecord ? Promise.resolve(PkRecord) : Promise.resolve(null);
+  }
+
+  static #updateByPK(stacks, PkVal, value, PkKey = null) {
+    const pushingValueIndex = stacks.findIndex(
+      (cloneVal) => cloneVal[PkKey || this.PRIMARY_KEY] === PkVal
+    );
+
+    if (pushingValueIndex === -1) {
+      return;
+    }
+
+    stacks.splice(pushingValueIndex, 1, value);
+  }
+
+  static #removeByPK(stacks, PkVal, PkKey = null) {
+    const pushingValueIndex = stacks.findIndex(
+      (cloneVal) => cloneVal[PkKey || this.PRIMARY_KEY] === PkVal
+    );
+
+    if (pushingValueIndex === -1) {
+      return;
+    }
+
+    stacks.splice(pushingValueIndex, 1);
   }
 }

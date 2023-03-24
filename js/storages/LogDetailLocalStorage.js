@@ -1,7 +1,8 @@
-import StackingStorage from './AbstractStakingStorage.js'
+import { DateTime } from '../helpers/DateTimeHelper.js';
+import Storage from './AbstractStakingStorage.js'
 import { DEFAULT_STORAGE_NAMESPACE, LOG_DETAIL_STORAGE_KEY } from './config';
 
-export default class LogDetailLocalStorage extends StackingStorage {
+export default class LogDetailLocalStorage extends Storage {
   static get NAMESPACE() {
     return DEFAULT_STORAGE_NAMESPACE;
   }
@@ -39,7 +40,7 @@ export default class LogDetailLocalStorage extends StackingStorage {
   }
 
   static format(value) {
-    return `<span style="color: ${this.LOG_LEVEL_COLOR[value.level]}" data-time="" title="">${value[this.CONTENT_KEY].replaceAll(
+    return `<span style="color: ${this.LOG_LEVEL_COLOR[value.level]}" data-time="${DateTime.instance().format()}">${value[this.CONTENT_KEY].replaceAll(
       /:(\w+)/g,
       (_, key) => (value.hasOwnProperty(key) ? value[key] : "")
     )}</span>`
