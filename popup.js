@@ -1,105 +1,19 @@
-import LogDetailStorage from "./js/storages/LogDetailLocalStorage";
-import QueueStorage from "./js/storages/QueueLocalStorage";
-import Runner from "./js/jobs/Runner";
-
-class Container {
-  static isStart(callback) {
-    getStorage("container", (container) => {
-      callback(container?.is_start);
-    });
-  }
-
-  static start() {
-    this.isStart(
-      ((isStart) => {
-        if (isStart) {
-          return;
-        }
-
-        getStorage("container", (container) => {
-          let cloneContainer = {};
-          if (
-            container &&
-            typeof container === "object" &&
-            container.constructor === Object
-          ) {
-            cloneContainer = { ...container, is_start: true };
-          } else {
-            cloneContainer = { is_start: true };
-          }
-
-          chrome.storage.sync.set({
-            container: cloneContainer,
-          });
-        });
-
-        addLogDetail("Tự động like chéo đã bắt đầu!", {
-          level: "success",
-        });
-      }).bind(this)
-    );
-  }
-
-  static stop() {
-    this.isStart(
-      ((isStart) => {
-        if (!isStart) {
-          return;
-        }
-
-        getStorage("container", (container) => {
-          let cloneContainer = {};
-          if (
-            container &&
-            typeof container === "object" &&
-            container.constructor === Object
-          ) {
-            cloneContainer = { ...container, is_start: false };
-          } else {
-            cloneContainer = { is_start: false };
-          }
-
-          chrome.storage.sync.set({
-            container: cloneContainer,
-          });
-        });
-
-        addLogDetail("Tự động like chéo đã tạm dừng", {
-          level: "default",
-        });
-      }).bind(this)
-    );
-  }
-
-  static add(url) {}
-
-  static delete(url) {}
-
-  static #execute() {}
-}
+import LogDetailStorage from "./js/storages/LogDetailLocalStorage.js";
+import QueueStorage from "./js/storages/QueueLocalStorage.js";
+import Runner from "./js/jobs/Runner.js";
 
 class ContentInfo extends HTMLElement {
-  get logLevelMap() {
-    return {
-      danger: "#dc3545",
-      info: "#0d6efd",
-      success: "#198754",
-      warning: "#ffc107",
-      default: "#6c757d",
-    };
-  }
-
   constructor() {
     super();
     this.registerAction();
   }
 
   registerAction() {
-    this.logFollowElement = this.querySelector("#main_content_follow");
-    this.logDetailElement = this.querySelector("#main_content_detail");
+    // this.logFollowElement = this.querySelector("#main_content_follow");
+    // this.logDetailElement = this.querySelector("#main_content_detail");
     this.btnSwitch = this.querySelector("#btn_switch");
     this.btnSwitch.onclick = this.onSwitch.bind(this);
-    this.listenAndRender();
+    // this.listenAndRender();
   }
 
   listenAndRender() {
@@ -172,8 +86,8 @@ class ContentInfo extends HTMLElement {
 class ContentControl extends HTMLElement {
   constructor() {
     super();
-    this.init();
-    this.registerAction();
+    // this.init();
+    // this.registerAction();
   }
 
   init() {
@@ -193,8 +107,7 @@ class ContentControl extends HTMLElement {
 
   registerAction() {
     this.yourPageUrlInput.onkeypress = this.#onPressEnterYourPageUrl.bind(this);
-    this.yourPageUrlInput.onblur =
-      this.#handleDisableYourPageUrlInput.bind(this);
+    this.yourPageUrlInput.onblur = this.#handleDisableYourPageUrlInput.bind(this);
     this.btnYourPageUrlInputEdit.onclick = this.#onEditYourPageUrl.bind(this);
     this.btnAddPage.onclick = this.#onAdd.bind(this);
     this.btnPrimary.onclick = this.#action.bind(this);
@@ -227,9 +140,9 @@ class ContentControl extends HTMLElement {
       return;
     }
 
-    Container.isStart(
-      ((isStart) => isStart && this.btnPrimary.click()).bind(this)
-    );
+    if (Runner.state()) {
+      this.btnPrimary.click().bind(this)
+    }
 
     const yourPageUrlLength = this.yourPageUrlInput.value.length;
     this.yourPageUrlInput.disabled = false;
@@ -249,6 +162,7 @@ class ContentControl extends HTMLElement {
   #handleDisableYourPageUrlInput() {
     if (this.#validateUrl(this.yourPageUrlInput.value)) {
       this.yourPageUrlInput.disabled = true;
+      Runner.attr('primary_page', this.yourPageUrlInput.value)
     } else {
       this.yourPageUrlInput.value = "";
     }
@@ -259,7 +173,7 @@ class ContentControl extends HTMLElement {
   }
 
   #validateUrl(url) {
-    return /^https:\/\/www\.facebook\.com\//.test(url) && !!url;
+    return url && /^https:\/\/www\.facebook\.com\//.test(url);
   }
 }
 

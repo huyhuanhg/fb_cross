@@ -1,5 +1,5 @@
 import Storage from "./AbstractStakingStorage.js";
-import { DEFAULT_STORAGE_NAMESPACE, QUEUE_STORAGE_KEY } from "./config";
+import { DEFAULT_STORAGE_NAMESPACE, QUEUE_STORAGE_KEY } from "../config.js";
 
 export default class QueueLocalStorage extends Storage {
   static get NAMESPACE() {
@@ -29,7 +29,7 @@ export default class QueueLocalStorage extends Storage {
   static get INIT_VALUE() {
     return {
       state: false,
-      data: []
+      data: [],
     };
   }
 
@@ -41,7 +41,24 @@ export default class QueueLocalStorage extends Storage {
     this.get().then(({ state, ...args }) => this.set({ state: true, ...args }));
   }
 
-  static validate(record) {
+  static attr(key, value) {
+    this.get().then(args => this.set({ ...args, [key]: value }));
+  }
+
+  static validate(item, data) {
+    if (!this.#validateUnique(item, data)) {
+      return false;
+    }
+
     return true;
+  }
+
+  static #validateUnique(item, data) {
+    const pKIndex = data.findIndex(
+      (record) =>
+        record[this.STACKING_PRIMARY_KEY] === item[this.STACKING_PRIMARY_KEY]
+    );
+
+    return pKIndex === -1;
   }
 }

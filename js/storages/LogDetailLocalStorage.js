@@ -1,6 +1,6 @@
-import { DateTime } from '../helpers/DateTimeHelper.js';
+import { DateTime } from '../helpers/index.js';
 import Storage from './AbstractStakingStorage.js'
-import { DEFAULT_STORAGE_NAMESPACE, LOG_DETAIL_STORAGE_KEY } from './config';
+import { DEFAULT_STORAGE_NAMESPACE, LOG_DETAIL_STORAGE_KEY } from '../config.js';
 
 export default class LogDetailLocalStorage extends Storage {
   static get NAMESPACE() {

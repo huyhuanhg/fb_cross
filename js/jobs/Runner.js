@@ -1,5 +1,5 @@
-import QueueStorage from "../storages/QueueLocalStorage";
-import LogDetailStorage from "../storages/LogDetailLocalStorage";
+import QueueStorage from "../storages/QueueLocalStorage.js";
+import LogDetailStorage from "../storages/LogDetailLocalStorage.js";
 
 export default class Runner {
   static state() {
@@ -40,8 +40,8 @@ export default class Runner {
     }
   }
 
-  static update(url) {
-
+  static attr(key, value) {
+    QueueStorage.attr(key, value)
   }
 
   static delete(url) {

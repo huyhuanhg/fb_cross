@@ -66,24 +66,3 @@ export class ObjectHelper {
     }
   }
 }
-
-
-const obj = {
-  key1: {
-    key2: {
-      key3: 'value_key_3'
-    }
-  }
-}
-
-const testHasKeyTrue = ObjectHelper.has(obj, 'key1.key2.key3')
-const testHasKeyFalse = ObjectHelper.has(obj, 'key1.key2.key4')
-const testGetKeyTrue = ObjectHelper.get(obj, 'key1.key2')
-const testGetKeyFalse = ObjectHelper.get(obj, 'key1.key2.key4')
-const testSetKeyTrue = ObjectHelper.set(obj, 'key1.key2.key3', 'new_value_key_3')
-
-console.log('testHasKeyTrue :>> ', testHasKeyTrue);
-console.log('testHasKeyFalse :>> ', testHasKeyFalse);
-console.log('testGetKeyTrue :>> ', testGetKeyTrue);
-console.log('testGetKeyFalse :>> ', testGetKeyFalse);
-console.log('testSetKeyTrue :>> ', testSetKeyTrue);

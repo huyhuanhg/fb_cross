@@ -1,5 +1,5 @@
 import Storage from "./AbstractStorage.js";
-import { Obj, Arr } from "../helpers";
+import { Obj, Arr } from "../helpers/index.js";
 
 export default class AbstractStakingStorage extends Storage {
   static get IS_STACKING() {
@@ -43,14 +43,6 @@ export default class AbstractStakingStorage extends Storage {
       return;
     }
 
-    if (
-      this.hasOwnProperty("validate") &&
-      typeof this.validate === "function" &&
-      !this.validate(value)
-    ) {
-      return;
-    }
-
     if (this.hasOwnProperty("format") && typeof this.format === "function") {
       value = this.format(value);
     }
@@ -63,13 +55,15 @@ export default class AbstractStakingStorage extends Storage {
       }
 
       if (!key && Arr.isArray(result)) {
-        return this.set([...result, value]);
+        if (this.#validate(value, result)) {
+          return this.set([...result, value]);
+        }
       }
 
       const cloneResult = { ...result };
       let stacks = Obj.get(cloneResult, key);
 
-      if (!Arr.isArray(stacks)) {
+      if (!Arr.isArray(stacks) || !this.#validate(value, stacks)) {
         return;
       }
 
@@ -238,5 +232,16 @@ export default class AbstractStakingStorage extends Storage {
     }
 
     stacks.splice(pushingValueIndex, 1);
+  }
+
+  static #validate(value, data) {
+    if (
+      !this.hasOwnProperty("validate") ||
+      typeof this.validate !== "function"
+    ) {
+      return true;
+    }
+
+    return this.validate(value, data);
   }
 }
