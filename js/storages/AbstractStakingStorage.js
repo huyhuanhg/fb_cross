@@ -209,15 +209,23 @@ export default class AbstractStakingStorage extends Storage {
 
   static findByPK(stacks, PkVal, PkKey = null) {
     const PkRecord = stacks.find(
-      (resultVal) => resultVal[PkKey || this.PRIMARY_KEY] === PkVal
+      (resultVal) => resultVal[PkKey || this.STACKING_PRIMARY_KEY] === PkVal
     );
 
     return PkRecord ? Promise.resolve(PkRecord) : Promise.resolve(null);
   }
 
+  static findByFK(stacks, FkVal, FkKey) {
+    const FkRecord = stacks.find(
+      (resultVal) => resultVal[FkKey] === FkVal
+    );
+
+    return FkRecord ? Promise.resolve(FkRecord) : Promise.resolve(null);
+  }
+
   static updateByPK(stacks, PkVal, value, PkKey = null) {
     const pushingValueIndex = stacks.findIndex(
-      (cloneVal) => cloneVal[PkKey || this.PRIMARY_KEY] === PkVal
+      (stackItem) => stackItem[PkKey || this.STACKING_PRIMARY_KEY] === PkVal
     );
 
     if (pushingValueIndex === -1) {

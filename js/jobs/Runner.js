@@ -1,5 +1,7 @@
 import QueueStorage from "../storages/QueueLocalStorage.js";
 import LogDetailStorage from "../storages/LogDetailLocalStorage.js";
+import Tab from "../entities/Tab.js";
+import { Arr } from "../helpers/index.js";
 
 export default class Runner {
   static state() {
@@ -22,17 +24,19 @@ export default class Runner {
       });
 
       const stacks = await QueueStorage.getStack();
+      stacks.forEach(async (stackItem) => {
+        const { url, status, is_inject, tab_id } = stackItem
+        const tab = await Tab.firstByPk(url, tab_id)
 
-      stacks.forEach(({ url, status }) => {
         if (status !== "active") {
-          this.#execute(url);
+          this.#execute(url, is_inject && tab_id ? stackItem : null);
         }
       });
     });
   }
 
   static async stop() {
-    if (!(await QueueStorage.isStart())) {
+    if (!await QueueStorage.isStart()) {
       return;
     }
 
@@ -44,9 +48,9 @@ export default class Runner {
 
       const stacks = await QueueStorage.getStack();
 
-      stacks.forEach(({ url, status }) => {
-        if (status === "active") {
-          this.#unExecute(url);
+      stacks.forEach(stackItem => {
+        if (stackItem.status === "active") {
+          this.#unExecute(stackItem);
         }
       });
     });
@@ -84,15 +88,27 @@ export default class Runner {
     LogDetailStorage.reset();
   }
 
-  static #execute(url) {
-    chrome.tabs.create({ url, active: false }, function (tab) {
-      chrome.scripting
-        .executeScript({
-          target: { tabId: tab.id },
-          files: ["./js/main.js"],
+  static #execute(url, self = null) {
+    if (!self) {
+      return Tab.create(url).then(tab => {
+        QueueStorage.update(url, {
+          url,
+          tab_id: tab.id,
+          status: 'active'
         })
-    });
+      })
+    }
+
+    QueueStorage.update(url, {
+      ...self,
+      status: 'active'
+    })
   }
 
-  static #unExecute(url) {}
+  static async #unExecute(queue) {
+    QueueStorage.update(queue.url, {
+      ...queue,
+      status: 'pending'
+    })
+  }
 }

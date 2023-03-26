@@ -1,6 +1,7 @@
 import LogDetailStorage from "./js/storages/LogDetailLocalStorage.js";
 import QueueStorage from "./js/storages/QueueLocalStorage.js";
 import Runner from "./js/jobs/Runner.js";
+import Tab from "./js/entities/Tab.js";
 
 class ContentInfo extends HTMLElement {
   constructor() {
@@ -115,6 +116,7 @@ class ContentControl extends HTMLElement {
   }
 
   registerAction() {
+    Tab.registerUpdated();
     this.yourPageUrlInput.onkeypress = this.#onPressEnterYourPageUrl.bind(this);
     this.yourPageUrlInput.onblur = this.#handleDisableYourPageUrlInput.bind(this);
     this.btnYourPageUrlInputEdit.onclick = this.#onEditYourPageUrl.bind(this);
@@ -188,8 +190,7 @@ class ContentControl extends HTMLElement {
   }
 
   #validateUrl(url) {
-    return true
-    // return url && /^https:\/\/www\.facebook\.com\//.test(url);
+    return url && /^https:\/\/www\.facebook\.com\//.test(url);
   }
 }
 

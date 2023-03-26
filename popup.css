@@ -197,7 +197,7 @@ body {
   background-color: #646464;
 }
 
-.log-follow-wrapper[data-status="inactive"]::before {
+.log-follow-wrapper[data-status="pending"]::before {
   background-color: #ffc107;
 }
 
