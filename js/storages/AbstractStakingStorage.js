@@ -38,33 +38,36 @@ export default class AbstractStakingStorage extends Storage {
     });
   }
 
-  static push(value) {
+  static async push(value) {
     if (this.isInvalidRequireKeys(value)) {
-      return;
+      return Promise.reject();
     }
 
     if (this.hasOwnProperty("format") && typeof this.format === "function") {
       value = this.format(value);
     }
 
-    this.get().then((result) => {
+    return this.get().then((result) => {
       const key = this.getStackKey();
 
       if (!Obj.has(result, key)) {
-        return;
+        return Promise.reject();
       }
 
       if (!key && Arr.isArray(result)) {
-        if (this.#validate(value, result)) {
-          return this.set([...result, value]);
+        if (this.validate(value, result)) {
+          this.set([...result, value]);
+          return Promise.resolve();
         }
+
+        return Promise.reject();
       }
 
       const cloneResult = { ...result };
       let stacks = Obj.get(cloneResult, key);
 
-      if (!Arr.isArray(stacks) || !this.#validate(value, stacks)) {
-        return;
+      if (!Arr.isArray(stacks) || !this.validate(value, stacks)) {
+        return Promise.reject();
       }
 
       const parentKey = key.includes(".")
@@ -75,6 +78,8 @@ export default class AbstractStakingStorage extends Storage {
       parent[stackKey] = [...stacks, value];
 
       this.set(cloneResult);
+
+      return Promise.resolve();
     });
   }
 
@@ -97,7 +102,7 @@ export default class AbstractStakingStorage extends Storage {
       if (!key && Arr.isArray(result)) {
         const cloneResult = [...result];
 
-        this.#updateByPK(cloneResult, PkVal, value);
+        this.updateByPK(cloneResult, PkVal, value);
 
         return this.set(cloneResult);
       }
@@ -114,7 +119,7 @@ export default class AbstractStakingStorage extends Storage {
       const stackKey = !parentKey ? key : key.replace(/^(.+?)\.(\w+)$/, "$2");
       const parent = Obj.get(cloneResult, parentKey);
 
-      this.#updateByPK(parent[stackKey], PkVal, value);
+      this.updateByPK(parent[stackKey], PkVal, value);
 
       this.set(cloneResult);
     });
@@ -131,7 +136,7 @@ export default class AbstractStakingStorage extends Storage {
       if (!key && Arr.isArray(result)) {
         const cloneResult = [...result];
 
-        this.#removeByPK(cloneResult, PkVal);
+        this.removeByPK(cloneResult, PkVal);
 
         return this.set(cloneResult);
       }
@@ -148,7 +153,7 @@ export default class AbstractStakingStorage extends Storage {
       const stackKey = !parentKey ? key : key.replace(/^(.+?)\.(\w+)$/, "$2");
       const parent = Obj.get(cloneResult, parentKey);
 
-      this.#removeByPK(parent[stackKey], PkVal);
+      this.removeByPK(parent[stackKey], PkVal);
 
       this.set(cloneResult);
     });
@@ -163,7 +168,7 @@ export default class AbstractStakingStorage extends Storage {
       }
 
       if (!key && Arr.isArray(result)) {
-        return this.#findByPK(result, PkVal);
+        return this.findByPK(result, PkVal);
       }
 
       const stacks = Obj.get(result, key);
@@ -172,7 +177,7 @@ export default class AbstractStakingStorage extends Storage {
         return Promise.resolve(null);
       }
 
-      return this.#findByPK(stacks, PkVal);
+      return this.findByPK(stacks, PkVal);
     });
   }
 
@@ -202,7 +207,7 @@ export default class AbstractStakingStorage extends Storage {
     );
   }
 
-  static #findByPK(stacks, PkVal, PkKey = null) {
+  static findByPK(stacks, PkVal, PkKey = null) {
     const PkRecord = stacks.find(
       (resultVal) => resultVal[PkKey || this.PRIMARY_KEY] === PkVal
     );
@@ -210,7 +215,7 @@ export default class AbstractStakingStorage extends Storage {
     return PkRecord ? Promise.resolve(PkRecord) : Promise.resolve(null);
   }
 
-  static #updateByPK(stacks, PkVal, value, PkKey = null) {
+  static updateByPK(stacks, PkVal, value, PkKey = null) {
     const pushingValueIndex = stacks.findIndex(
       (cloneVal) => cloneVal[PkKey || this.PRIMARY_KEY] === PkVal
     );
@@ -222,9 +227,9 @@ export default class AbstractStakingStorage extends Storage {
     stacks.splice(pushingValueIndex, 1, value);
   }
 
-  static #removeByPK(stacks, PkVal, PkKey = null) {
+  static removeByPK(stacks, PkVal, PkKey = null) {
     const pushingValueIndex = stacks.findIndex(
-      (cloneVal) => cloneVal[PkKey || this.PRIMARY_KEY] === PkVal
+      (stackItem) => stackItem[PkKey || this.STACKING_PRIMARY_KEY] === PkVal
     );
 
     if (pushingValueIndex === -1) {
@@ -234,14 +239,14 @@ export default class AbstractStakingStorage extends Storage {
     stacks.splice(pushingValueIndex, 1);
   }
 
-  static #validate(value, data) {
+  static validate(value, data) {
     if (
-      !this.hasOwnProperty("validate") ||
-      typeof this.validate !== "function"
+      !this.hasOwnProperty("validateData") ||
+      typeof this.validateData !== "function"
     ) {
       return true;
     }
 
-    return this.validate(value, data);
+    return this.validateData(value, data);
   }
 }

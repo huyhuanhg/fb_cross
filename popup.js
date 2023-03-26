@@ -9,18 +9,20 @@ class ContentInfo extends HTMLElement {
   }
 
   registerAction() {
-    // this.logFollowElement = this.querySelector("#main_content_follow");
-    // this.logDetailElement = this.querySelector("#main_content_detail");
+    this.logFollowElement = this.querySelector("#main_content_follow");
+    this.logDetailElement = this.querySelector("#main_content_detail");
     this.btnSwitch = this.querySelector("#btn_switch");
     this.btnSwitch.onclick = this.onSwitch.bind(this);
-    // this.listenAndRender();
+    this.listenAndRender();
   }
 
-  listenAndRender() {
-    this.#renderFollow(QueueStorage.getStack());
-    this.#renderDetail(LogDetailStorage.getStack());
+  async listenAndRender() {
+    const queue = await QueueStorage.getStack()
+    const log = await LogDetailStorage.getStack()
+    this.#renderFollow(queue);
+    this.#renderDetail(log);
 
-    QueueStorage.change(this.#renderFollow.bind(this));
+    QueueStorage.change(this.#renderFollow.bind(this), 'data');
     LogDetailStorage.change(this.#renderDetail.bind(this));
   }
 
@@ -36,10 +38,10 @@ class ContentInfo extends HTMLElement {
     this.btnSwitch.dataset.switchText = currentLabel;
   }
 
-  #renderFollow(value) {
+  #renderFollow(data) {
     this.logFollowElement.innerHTML = "";
 
-    value.forEach(({ url, status }) => {
+    data.forEach(({ url, status }) => {
       const logDetailWrapper = document.createElement("div");
       logDetailWrapper.classList.add("log-follow-wrapper");
       logDetailWrapper.dataset.status = status;
@@ -65,10 +67,10 @@ class ContentInfo extends HTMLElement {
     });
   }
 
-  #renderDetail(value) {
+  #renderDetail(data) {
     this.logDetailElement.innerHTML = "";
 
-    value.forEach((message) => {
+    data.forEach((message) => {
       const logDetailWrapper = document.createElement("div");
       logDetailWrapper.classList.add("log-detail-wrapper");
 
@@ -86,11 +88,11 @@ class ContentInfo extends HTMLElement {
 class ContentControl extends HTMLElement {
   constructor() {
     super();
-    // this.init();
-    // this.registerAction();
+    this.init();
+    this.registerAction();
   }
 
-  init() {
+  async init() {
     this.yourPageUrlInput = this.querySelector("#your_page_url_input");
     this.btnYourPageUrlInputEdit = this.querySelector(
       "#your_page_url_input+span"
@@ -99,9 +101,16 @@ class ContentControl extends HTMLElement {
     this.btnPrimary = this.querySelector("#btn_primary");
     this.btnReset = this.querySelector("#btn_reset");
 
-    if (Runner.state()) {
-      this.btnPrimary.dataset.onClickLabel = "Bắt đầu";
+    if (await Runner.state()) {
+      this.btnPrimary.dataset.onClickLabel = "is_start";
       this.btnPrimary.innerText = "Tạm dừng";
+    }
+
+    const primaryPage = await Runner.primaryPage()
+
+    if (primaryPage) {
+      this.yourPageUrlInput.value = primaryPage
+      this.yourPageUrlInput.disabled = true
     }
   }
 
@@ -114,15 +123,22 @@ class ContentControl extends HTMLElement {
     this.btnReset.onclick = this.#reset.bind(this);
   }
 
-  #action() {
-    if (Runner.state()) {
-      Runner.stop();
-    } else {
-      Runner.start();
+  async #action() {
+    const isStart = await Runner.state()
+    if (! isStart && ! await Runner.isEmpty()) {
+      this.btnPrimary.dataset.onClickLabel = "is_start";
+      this.btnPrimary.innerText = "Tạm dừng";
+      return Runner.start();
     }
+
+    this.btnPrimary.dataset.onClickLabel = "is_stop";
+    this.btnPrimary.innerText = "Bắt đầu";
+    return Runner.stop();
   }
 
   #reset() {
+    this.yourPageUrlInput.value = ''
+    this.yourPageUrlInput.disabled = false
     Runner.reset();
   }
 
@@ -130,18 +146,13 @@ class ContentControl extends HTMLElement {
     const url = this.#getUrlValue();
     if (this.#validateUrl(url)) {
       Runner.push(url);
-    } else {
       this.querySelector("form.main-content-control__form").reset();
     }
   }
 
-  #onEditYourPageUrl() {
+  async #onEditYourPageUrl() {
     if (!this.yourPageUrlInput.disabled) {
       return;
-    }
-
-    if (Runner.state()) {
-      this.btnPrimary.click().bind(this)
     }
 
     const yourPageUrlLength = this.yourPageUrlInput.value.length;
@@ -151,6 +162,10 @@ class ContentControl extends HTMLElement {
       yourPageUrlLength,
       yourPageUrlLength
     );
+
+    if (await Runner.state()) {
+      this.btnPrimary.click().bind(this)
+    }
   }
 
   #onPressEnterYourPageUrl(event) {
@@ -162,7 +177,7 @@ class ContentControl extends HTMLElement {
   #handleDisableYourPageUrlInput() {
     if (this.#validateUrl(this.yourPageUrlInput.value)) {
       this.yourPageUrlInput.disabled = true;
-      Runner.attr('primary_page', this.yourPageUrlInput.value)
+      Runner.primaryPage(this.yourPageUrlInput.value)
     } else {
       this.yourPageUrlInput.value = "";
     }
@@ -173,7 +188,8 @@ class ContentControl extends HTMLElement {
   }
 
   #validateUrl(url) {
-    return url && /^https:\/\/www\.facebook\.com\//.test(url);
+    return true
+    // return url && /^https:\/\/www\.facebook\.com\//.test(url);
   }
 }
 

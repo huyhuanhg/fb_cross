@@ -26,26 +26,39 @@ export default class QueueLocalStorage extends Storage {
     return ["url", "status"];
   }
 
+  static get STACKING_DEFAULT_VALUES() {
+    return { status: "inactive" };
+  }
+
   static get INIT_VALUE() {
     return {
       state: false,
+      primary_page: '',
       data: [],
     };
   }
 
   static async isStart() {
-    return await this.get().then(({ state }) => state);
+    return await this.attr("state");
+  }
+
+  static async isEmpty() {
+    return await this.attr("data").then((result) => Promise.resolve(result.length === 0));
   }
 
   static start() {
-    this.get().then(({ state, ...args }) => this.set({ state: true, ...args }));
+    return this.attr({ state: true });
   }
 
-  static attr(key, value) {
-    this.get().then(args => this.set({ ...args, [key]: value }));
+  static stop() {
+    return this.attr({ state: false });
   }
 
-  static validate(item, data) {
+  static async primaryPage(value = null) {
+    return await this.attr(value === null ? 'primary_page' : { primary_page: value });
+  }
+
+  static validateData(item, data) {
     if (!this.#validateUnique(item, data)) {
       return false;
     }

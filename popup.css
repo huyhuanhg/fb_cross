@@ -240,11 +240,11 @@ body {
   color: #fff;
 }
 
-#btn_primary[data-on-click-label="Tạm dừng"] {
+#btn_primary[data-on-click-label="is_stop"] {
   background-color: #198754;
   color: #fff;
 }
 
-#btn_primary[data-on-click-label="Bắt đầu"] {
+#btn_primary[data-on-click-label="is_start"] {
   background-color: #ffc107;
 }

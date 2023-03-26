@@ -6,42 +6,68 @@ export default class Runner {
     return QueueStorage.isStart();
   }
 
-  static start() {
-    if (QueueStorage.isStart()) {
+  static isEmpty() {
+    return QueueStorage.isEmpty();
+  }
+
+  static async start() {
+    if (await QueueStorage.isStart()) {
       return;
     }
 
-    LogDetailStorage.push({
-      message: "",
+    QueueStorage.start().then(async () => {
+      LogDetailStorage.push({
+        content: "Bắt đầu tự động like chéo!",
+        level: "success",
+      });
+
+      const stacks = await QueueStorage.getStack();
+
+      stacks.forEach(({ url, status }) => {
+        if (status !== "active") {
+          this.#execute(url);
+        }
+      });
     });
   }
 
-  static stop() {
-    if (!QueueStorage.isStart()) {
+  static async stop() {
+    if (!(await QueueStorage.isStart())) {
       return;
     }
 
-    LogDetailStorage.push({
-      message: "",
+    QueueStorage.stop().then(async () => {
+      LogDetailStorage.push({
+        content: "Tạm dừng tự động like chéo!",
+        level: "warning",
+      });
+
+      const stacks = await QueueStorage.getStack();
+
+      stacks.forEach(({ url, status }) => {
+        if (status === "active") {
+          this.#unExecute(url);
+        }
+      });
     });
   }
 
-  static push(url) {
-    QueueStorage.push({ url });
-
-    LogDetailStorage.push({
-      message: "URL :url đã được thêm vào hàng đợi!",
-      level: "info",
-      url,
+  static async push(url) {
+    QueueStorage.push({ url }).then(() => {
+      LogDetailStorage.push({
+        content: "URL :url đã được thêm vào hàng đợi!",
+        level: "info",
+        url,
+      });
     });
 
-    if (QueueStorage.isStart()) {
-      this.#execute(url)
+    if (await QueueStorage.isStart()) {
+      this.#execute(url);
     }
   }
 
-  static attr(key, value) {
-    QueueStorage.attr(key, value)
+  static primaryPage(value = null) {
+    return QueueStorage.primaryPage(value);
   }
 
   static delete(url) {
@@ -49,7 +75,7 @@ export default class Runner {
     LogDetailStorage.push({
       url,
       level: "danger",
-      message: "URL :url đã được xóa khỏi hàng đợi!",
+      content: "URL :url đã được xóa khỏi hàng đợi!",
     });
   }
 
@@ -58,5 +84,15 @@ export default class Runner {
     LogDetailStorage.reset();
   }
 
-  static #execute(url) {}
+  static #execute(url) {
+    chrome.tabs.create({ url, active: false }, function (tab) {
+      chrome.scripting
+        .executeScript({
+          target: { tabId: tab.id },
+          files: ["./js/main.js"],
+        })
+    });
+  }
+
+  static #unExecute(url) {}
 }

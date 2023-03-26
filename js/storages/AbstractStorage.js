@@ -1,3 +1,5 @@
+import { Obj } from "../helpers/index.js";
+
 export default class AbstractStorage {
   static get NAMESPACE() {
     throw new Error("You have to implement the constant NAMESPACE!");
@@ -28,9 +30,24 @@ export default class AbstractStorage {
 
   static async get() {
     return chrome.storage[this.NAMESPACE].get([this.KEY]).then(
-      (result) => Promise.resolve(result[this.KEY] || this.DEFAULT_VALUE),
-      () => Promise.resolve(this.DEFAULT_VALUE)
+      (result) => Promise.resolve(result[this.KEY] || this.INIT_VALUE),
+      () => Promise.resolve(this.INIT_VALUE)
     );
+  }
+
+  static async attr(request) {
+    return this.get().then((args) => {
+      if (!Obj.isObject(request) && typeof request !== "string") {
+        return Promise.reject();
+      }
+
+      if (Obj.isObject(request)) {
+        this.set({ ...args, ...request });
+        return Promise.resolve();
+      }
+
+      return Promise.resolve(Obj.get(args, request));
+    });
   }
 
   static set(value) {
@@ -41,9 +58,9 @@ export default class AbstractStorage {
     chrome.storage[this.NAMESPACE].set({ [this.KEY]: this.INIT_VALUE });
   }
 
-  static change(callback) {
-    if (!callback || typeof callback !== 'function') {
-      return
+  static change(callback, key = "") {
+    if (!callback || typeof callback !== "function") {
+      return;
     }
 
     chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -52,8 +69,10 @@ export default class AbstractStorage {
       }
 
       if (changes.hasOwnProperty(this.KEY)) {
-        const { [this.KEY]: { newValue } } = changes;
-        callback(newValue)
+        const {
+          [this.KEY]: { newValue },
+        } = changes;
+        callback(Obj.get(newValue, key));
       }
     });
   }
