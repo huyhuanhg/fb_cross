@@ -141,6 +141,8 @@ class ContentControl extends HTMLElement {
   #reset() {
     this.yourPageUrlInput.value = ''
     this.yourPageUrlInput.disabled = false
+    this.btnPrimary.dataset.onClickLabel = "is_stop";
+    this.btnPrimary.innerText = "Bắt đầu";
     Runner.reset();
   }
 

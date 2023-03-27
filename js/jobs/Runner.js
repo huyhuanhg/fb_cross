@@ -24,19 +24,17 @@ export default class Runner {
       });
 
       const stacks = await QueueStorage.getStack();
-      stacks.forEach(async (stackItem) => {
-        const { url, status, is_inject, tab_id } = stackItem
-        const tab = await Tab.firstByPk(url, tab_id)
 
-        if (status !== "active") {
-          this.#execute(url, is_inject && tab_id ? stackItem : null);
-        }
+      stacks.forEach(async (stackItem) => {
+        const tab = await Tab.firstByPk(stackItem.url, stackItem.tab_id);
+
+        this.#execute(stackItem, tab);
       });
     });
   }
 
   static async stop() {
-    if (!await QueueStorage.isStart()) {
+    if (!(await QueueStorage.isStart())) {
       return;
     }
 
@@ -46,12 +44,14 @@ export default class Runner {
         level: "warning",
       });
 
-      const stacks = await QueueStorage.getStack();
-
-      stacks.forEach(stackItem => {
-        if (stackItem.status === "active") {
-          this.#unExecute(stackItem);
-        }
+      QueueStorage.get().then((result) => {
+        QueueStorage.set({
+          ...result,
+          data: result.data.map((stack) => ({
+            ...stack,
+            status: "pending",
+          })),
+        });
       });
     });
   }
@@ -59,14 +59,15 @@ export default class Runner {
   static async push(url) {
     QueueStorage.push({ url }).then(() => {
       LogDetailStorage.push({
-        content: "URL :url đã được thêm vào hàng đợi!",
+        content: "URL :url đã được thêm vào hệ thống!",
         level: "info",
         url,
       });
     });
 
     if (await QueueStorage.isStart()) {
-      this.#execute(url);
+      const tab = await Tab.firstByPk(url);
+      this.#execute({ url }, tab);
     }
   }
 
@@ -74,12 +75,22 @@ export default class Runner {
     return QueueStorage.primaryPage(value);
   }
 
-  static delete(url) {
+  static async delete(url) {
+    const stack = await QueueStorage.getByPK(url)
+
+    if (!stack) {
+      return
+    }
+
+    if (stack.tab_id) {
+      Tab.remove(stack.tab_id)
+    }
+
     QueueStorage.delete(url);
     LogDetailStorage.push({
       url,
       level: "danger",
-      content: "URL :url đã được xóa khỏi hàng đợi!",
+      content: "URL :url đã được xóa khỏi hệ thống!",
     });
   }
 
@@ -88,27 +99,41 @@ export default class Runner {
     LogDetailStorage.reset();
   }
 
-  static #execute(url, self = null) {
-    if (!self) {
-      return Tab.create(url).then(tab => {
-        QueueStorage.update(url, {
-          url,
-          tab_id: tab.id,
-          status: 'active'
-        })
-      })
+  static #execute(stack, tab = null) {
+    if (!tab) {
+      return Tab.create(stack.url).then((newTab) =>
+        this.#update(stack.url, newTab.id)
+      );
     }
 
-    QueueStorage.update(url, {
-      ...self,
-      status: 'active'
-    })
+    LogDetailStorage.push({
+      content: 'Nhóm ":title" bắt đầu được theo dõi!',
+      level: "success",
+      title: tab.title,
+    });
+
+    if (stack.tab_id !== tab.id) {
+      return Tab.inject(tab.id).then(() =>
+        this.#update(stack.url, tab.id, "active", true, tab.title)
+      );
+    }
+
+    return this.#update(stack.url, stack.tab_id, "active", true, stack.title);
   }
 
-  static async #unExecute(queue) {
-    QueueStorage.update(queue.url, {
-      ...queue,
-      status: 'pending'
-    })
+  static #update(
+    url,
+    tabId = null,
+    status = "active",
+    isInject = false,
+    title = ""
+  ) {
+    return QueueStorage.update(url, {
+      url,
+      tab_id: tabId,
+      is_inject: isInject,
+      status,
+      title,
+    });
   }
 }

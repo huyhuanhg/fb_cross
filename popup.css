@@ -231,6 +231,61 @@ body {
   cursor: pointer;
 }
 
+.log-detail-wrapper [data-time] {
+  position: relative;
+}
+
+.log-detail-wrapper [data-time]::before {
+  content: attr(data-time);
+  display: block;
+  visibility: hidden;
+  width: 120px;
+  background-color: #555555d1;
+  color: #fff;
+  text-align: center;
+  border-radius: 3px;
+  padding: 2px 0;
+  position: absolute;
+  z-index: 1;
+  bottom: calc(100% + 5px);
+  left: 0;
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 10px;
+  line-height: 12px;
+}
+
+.log-detail-wrapper [data-time]::after {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 60px;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #555555d1 transparent transparent transparent;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.log-detail-wrapper:first-of-type [data-time]::before {
+  bottom: auto;
+  top: calc(100% + 5px);
+}
+
+.log-detail-wrapper:first-of-type [data-time]::after {
+  top: auto;
+  bottom: -5px;
+  transform: rotate(180deg);
+}
+
+.log-detail-wrapper [data-time]:hover::before,
+.log-detail-wrapper [data-time]:hover::after {
+  visibility: visible;
+  opacity: 1;
+}
+
 #btn_primary {
   width: 80px;
 }
